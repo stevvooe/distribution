@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/codegangsta/cli"
@@ -36,7 +37,13 @@ func imagePush(c *cli.Context) {
 		ctxu.GetLogger(ctx).Fatalln(err)
 	}
 
-	if err := distribution.Push(ctx, remote, local, "library/ubuntu", "latest"); err != nil {
+	name, tag, _ := splitNameTag(c.Args().Get(0))
+	if name == "" || tag == "" {
+		ctxu.GetLogger(ctx).Fatalln("please specify an image")
+	}
+
+	fmt.Println("push", c.Args().Get(0))
+	if err := distribution.Push(ctx, remote, local, name, tag); err != nil {
 		ctxu.GetLogger(ctx).Fatalln(err)
 	}
 }
