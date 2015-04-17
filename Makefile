@@ -5,15 +5,19 @@ PREFIX?=$(shell pwd)
 VERSION=$(shell git describe --match 'v[0-9]*' --dirty='.m' --always)
 GO_LDFLAGS=-ldflags "-X `go list ./version`.Version $(VERSION)"
 
-.PHONY: clean all gopath fmt vet lint build test binaries godeps
-.DEFAULT: godeps
+.PHONY: clean all gopath fmt vet lint build test binaries godeps setup-godeps setup
+.DEFAULT: setup-godeps
+
+# Target runs setup without calling godeps then descends. Make setup can be
+# run at any time.
+setup-godeps: setup godeps
 
 # The godeps target is the default target that sets the go tool to use godep.
 # Any target can be run without godep by running it directly or running "all".
 godeps: export GOPATH:=$(shell godep path):${GOPATH}
 godeps: all
 
-all: gopath AUTHORS clean fmt vet fmt lint build test binaries
+all: gopath AUTHORS clean fmt vet fmt lint deps build test binaries
 
 AUTHORS: .mailmap .git/HEAD
 	git log --format='%aN <%aE>' | sort -fu > $@
@@ -36,6 +40,15 @@ ${PREFIX}/bin/dist: version/version.go $(shell find . -type f -name '*.go')
 
 docs/spec/api.md: docs/spec/api.md.tmpl ${PREFIX}/bin/registry-api-descriptor-template
 	./bin/registry-api-descriptor-template $< > $@
+
+setup:
+	@if [[ "$${GOPATH%:*}" != */Godeps/_workspace ]]; then \
+		echo "+ $@"; \
+		go get -d -t ./...; \
+		go get code.google.com/p/go.tools/cmd/vet \
+			    github.com/tools/godep \
+			    github.com/golang/lint/golint; \
+	fi
 
 vet:
 	@echo "+ $@"
