@@ -69,7 +69,7 @@ func (rs *revisionStore) get(ctx context.Context, revision digest.Digest) (*sche
 		return nil, err
 	}
 
-	return &sm, nil
+	return m.WithSignatures(signatures...)
 }
 
 // put stores the manifest in the repository, if not already present. Any
